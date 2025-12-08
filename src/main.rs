@@ -16,9 +16,9 @@ use yubikey::{piv::RetiredSlotId, reader::Context, PinPolicy, Serial, TouchPolic
 
 mod builder;
 mod error;
-mod format;
 mod key;
 mod p256;
+mod piv_p256;
 mod plugin;
 mod util;
 

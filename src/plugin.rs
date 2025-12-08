@@ -7,7 +7,7 @@ use age_plugin::{
 use std::collections::{HashMap, HashSet};
 use std::io;
 
-use crate::{fl, format, key, p256::Recipient, PLUGIN_NAME};
+use crate::{fl, key, p256::Recipient, piv_p256, PLUGIN_NAME};
 
 pub(crate) struct Handler;
 
@@ -114,7 +114,7 @@ impl RecipientPluginV1 for RecipientPlugin {
                     self.recipients
                         .iter()
                         .chain(yk_recipients.iter())
-                        .map(|pk| format::RecipientLine::wrap_file_key(&file_key, pk).into())
+                        .map(|pk| piv_p256::RecipientLine::wrap_file_key(&file_key, pk).into())
                         .collect()
                 })
                 .collect())
@@ -159,7 +159,7 @@ impl IdentityPluginV1 for IdentityPlugin {
         let mut file_keys = HashMap::with_capacity(files.len());
 
         // Filter to files / stanzas for which we have matching YubiKeys
-        let mut candidate_stanzas: Vec<(&key::Stub, HashMap<usize, Vec<format::RecipientLine>>)> =
+        let mut candidate_stanzas: Vec<(&key::Stub, HashMap<usize, Vec<piv_p256::RecipientLine>>)> =
             self.yubikeys
                 .iter()
                 .map(|stub| (stub, HashMap::new()))
@@ -168,7 +168,7 @@ impl IdentityPluginV1 for IdentityPlugin {
         for (file, stanzas) in files.iter().enumerate() {
             for (stanza_index, stanza) in stanzas.iter().enumerate() {
                 match (
-                    format::RecipientLine::from_stanza(stanza).map(|res| {
+                    piv_p256::RecipientLine::from_stanza(stanza).map(|res| {
                         res.map_err(|_| identity::Error::Stanza {
                             file_index: file,
                             stanza_index,

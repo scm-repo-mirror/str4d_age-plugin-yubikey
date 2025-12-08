@@ -21,8 +21,8 @@ use yubikey::{
 use crate::{
     error::Error,
     fl,
-    format::RecipientLine,
     p256::{Recipient, TAG_BYTES},
+    piv_p256,
     util::{otp_serial_prefix, Metadata},
     IDENTITY_PREFIX,
 };
@@ -476,7 +476,7 @@ impl Stub {
         bytes
     }
 
-    pub(crate) fn matches(&self, line: &RecipientLine) -> bool {
+    pub(crate) fn matches(&self, line: &piv_p256::RecipientLine) -> bool {
         self.tag == line.tag
     }
 
