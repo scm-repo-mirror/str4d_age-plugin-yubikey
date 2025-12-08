@@ -20,11 +20,10 @@ use yubikey::{
 
 use crate::{
     error::Error,
-    fl,
-    p256::{Recipient, TAG_BYTES},
-    piv_p256,
+    fl, piv_p256,
+    recipient::TAG_BYTES,
     util::{otp_serial_prefix, Metadata},
-    IDENTITY_PREFIX,
+    Recipient, IDENTITY_PREFIX,
 };
 
 const ONE_SECOND: Duration = Duration::from_secs(1);
@@ -394,7 +393,8 @@ pub(crate) fn list_slots(
         match key.slot() {
             SlotId::Retired(slot) => {
                 // Only P-256 keys are compatible with us.
-                let recipient = Recipient::from_certificate(key.certificate());
+                let recipient = piv_p256::Recipient::from_certificate(key.certificate())
+                    .map(Recipient::PivP256);
                 Some((key, slot, recipient))
             }
             _ => None,
@@ -449,7 +449,7 @@ impl Stub {
         Stub {
             serial,
             slot,
-            tag: recipient.tag(),
+            tag: recipient.static_tag(),
             identity_index: 0,
         }
     }
@@ -474,10 +474,6 @@ impl Stub {
         bytes.push(self.slot.into());
         bytes.extend_from_slice(&self.tag);
         bytes
-    }
-
-    pub(crate) fn matches(&self, line: &piv_p256::RecipientLine) -> bool {
-        self.tag == line.tag
     }
 
     /// Returns:
@@ -601,9 +597,9 @@ impl Stub {
         let (cert, pk) = match Certificate::read(&mut yubikey, SlotId::Retired(self.slot))
             .ok()
             .and_then(|cert| {
-                Recipient::from_certificate(&cert)
+                piv_p256::Recipient::from_certificate(&cert)
                     .filter(|pk| pk.tag() == self.tag)
-                    .map(|pk| (cert, pk))
+                    .map(|pk| (cert, Recipient::PivP256(pk)))
             }) {
             Some(pk) => pk,
             None => {
